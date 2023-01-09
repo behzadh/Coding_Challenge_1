@@ -1,0 +1,7 @@
+.DS_Store
+raw_data/Consumption.csv
+raw_data/Merge.csv
+raw_data/Trades.csv
+raw_data/.DS_Store
+utils/.DS_Store
+utils/__pycache__ 
