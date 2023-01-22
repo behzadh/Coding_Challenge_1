@@ -7,9 +7,8 @@ warnings.filterwarnings("ignore")
 class ConsumptionData:
 
     '''
-    This Class will perform a pandas Dataframe create a Pandas DataFrame with to show 
-    the consumption of each year. It also creates a seasonal plot showing all 7-years 
-    of 2016-2022.
+    This Class will perform a Pandas DataFrame with to show the consumption of each year. 
+    It also creates a seasonal plot showing all 7-years of 2016-2022.
 
     __init__(self)
     load_data(self)
@@ -32,16 +31,10 @@ class ConsumptionData:
         '''
 
         df = pd.read_csv(self.path + "Consumption.csv")
-        df_good = df[df.Date.str.contains('(\d{2})[/](\d{2})[/](\d{4})')]
-        df_good['mm-dd'] = pd.to_datetime(df_good.Date, format='%d/%m/%Y')
-        df_not_good = df[~df.Date.str.contains('(\d{2})[/](\d{2})[/](\d{4})')]
-        df_not_good = df_not_good.drop(['Date'], axis=1)
-
-        index = pd.Index(range(1461,1827))
-        df_2020 = pd.DataFrame(pd.date_range(start='1/1/2020', end='31/12/2020'), columns=['mm-dd'], index=index)
-        df_2020_cleaned = pd.concat([df_2020,df_not_good], axis=1)
-        df_final = pd.concat([df_2020_cleaned,df_good], sort=False).sort_index()
-        return df_final
+        date_frmt1 = pd.to_datetime(df['Date'], errors='coerce', format='%d/%m/%Y')
+        date_frmt2 = pd.to_datetime(df['Date'], errors='coerce', format='%Y%m%d')
+        df['Date'] = date_frmt1.fillna(date_frmt2)
+        return df
 
     def group_by_year(self):
 
@@ -57,7 +50,8 @@ class ConsumptionData:
         '''
 
         df = self.load_data()
-        df['Year'] = df['mm-dd'].dt.year
+        df['Year'] = df['Date'].dt.year
+        df = df.rename(columns = {'Date':'mm-dd'})
         df_pvt = pd.pivot_table(df, index=df['mm-dd'].dt.strftime('%m-%d'), columns='Year', values='Consumption')
         df_pvt['avg_all'] = df_pvt.mean(axis=1)
         df_pvt['5y_min'] = df_pvt[[2016,2017,2018,2019,2020]].min(axis=1)
@@ -85,11 +79,11 @@ class ConsumptionData:
         comment = "As illustrated, energy consumption starts to raise from the middle of October until the end \n" \
                 "of May each year. On average, the energy consumption in winter is about double compared \n" \
                 "with summertime. In 2021, energy usage follows an unexpected patern, which can have \n" \
-                "which can have several reasons such as COVID19 or climate changes (colderwinter).\n" \
+                "several reasons such as COVID19 or climate changes (colderwinter).\n" \
                 "The plot also shows the energy usage for 2022 has dropped below average, which could \n" \
                 "be dueto changes in energy provider situations (such as the Ukraine war) and the \n" \
                 "energy cost increases."
-        ax.text(70, 435, comment, style='italic', bbox={
+        ax.text(68, 435, comment, style='italic', bbox={
         'facecolor': 'grey', 'alpha': 0.1, 'pad': 10})
         ax.legend(loc = 'best')
         plt.savefig('seasonal_plot.png')
@@ -98,7 +92,7 @@ class ConsumptionData:
     def main(self):
         
         data = self.group_by_year()
-        print(data.head())
+        print(data.head(1464))
         self.plot_seasonal()
 
 if __name__ == '__main__':
